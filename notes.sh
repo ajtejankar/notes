@@ -8,7 +8,6 @@ notes_dirname=".notes"
 note_done_marker='✔'
 first_todo="tasks.todo"
 
-
 gen_patch() {
 	git diff --no-index -- "$1" "$2"
 }
@@ -21,6 +20,29 @@ parse_done() {
 sanitize_commit_msg() {
 	sed -i -r "s:\+\s+$note_done_marker:*:g" "$1"
 	sed -i -r "s:@.*$::g" "$1"
+}
+
+to_win_path() {
+	if [[ "${1:0:1}" = '/' ]]; then
+		path="${1:2}"
+		drive_letter="${1:1:1}"
+		path="${drive_letter^^}:$path"
+		# if leading slash is provided
+		# then change drive letters
+	else
+		# assume that this is a relative path
+		# and henve no drive letter changing is done
+		path="$1"
+	fi
+
+	path="${path//\//\\}"
+	echo "$path"
+}
+
+create_link() {
+	path="$(to_win_path $1)"
+	# don't forget to quote the path
+	./create_link.cmd "$notes_dirname" "$path"
 }
 
 init() {
@@ -38,7 +60,7 @@ init() {
 		which subl &>/dev/null && subl "$notes_dir/$first_todo"
 	fi
 
-	ln -s "$notes_dir" "$notes_dirname"
+	create_link "$notes_dir"
 	mkdir "$notes_dirname/prev"
 
 	# we don't care if the no '.gitignore' file is present
@@ -75,7 +97,7 @@ commit() {
 		git commit -t commit_template
 
 		if [[ "$?" = "0" ]]; then
-			mv "$file" "$prev_file"
+			cp "$file" "$prev_file"
 		fi
 
 		rm commit_template
