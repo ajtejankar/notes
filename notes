@@ -41,7 +41,7 @@ create_link() {
 	path="$(to_win_path $1)"
 
 	if [[ "$OS" = *Windows* ]]; then
-		./create_link.cmd "$notes_dirname" "$path"
+		create_link.cmd "$notes_dirname" "$path"
 	fi
 }
 
@@ -111,6 +111,7 @@ usage: notes <command>
 Following commands can be used
 
 init 	init a new note for the current project
+commit 	create a commit with done todos
 help 	print this help message
 EOF
 }
