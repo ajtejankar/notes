@@ -39,8 +39,10 @@ to_win_path() {
 
 create_link() {
 	path="$(to_win_path $1)"
-	# don't forget to quote the path
-	./create_link.cmd "$notes_dirname" "$path"
+
+	if [[ "$OS" = *Windows* ]]; then
+		./create_link.cmd "$notes_dirname" "$path"
+	fi
 }
 
 init() {
