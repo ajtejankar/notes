@@ -18,11 +18,15 @@ init() {
 
 	if ! [[ -d "$notes_dir" ]]; then
 		mkdir "$notes_dir"
+		touch "$notes_dir/tasks.todo"
+		which subl &>/dev/null && subl "$notes_dir/tasks.todo"
 	fi
 
 	ln -s "$notes_dir" "$notes_dirname"
 
-	if ! grep -q "$notes_dirname" '.gitignore' && ! ((commit_notes)); then
+	# we don't care if the no '.gitignore' file is present
+	# so squash the error
+	if ! grep "$notes_dirname" '.gitignore' &>/dev/null && ! ((commit_notes)); then
 		echo "$notes_dirname" >> '.gitignore'
 		git add '.gitignore'
 		git commit -m "add .notes dir"
