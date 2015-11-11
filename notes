@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+#------- config -------
+
 dropbox_dir=~/"Dropbox/work/notes"
 notes_dirname=".notes"
 # switch to commit the notes dir
@@ -7,6 +9,8 @@ notes_dirname=".notes"
 # has to be regex escaped
 note_done_marker='✔'
 first_todo="tasks.todo"
+
+#------- utility functions -------
 
 gen_patch() {
 	git diff --no-index -- "$1" "$2"
@@ -44,6 +48,8 @@ create_link() {
 		create_link.cmd "$notes_dirname" "$path"
 	fi
 }
+
+#------- commands -------
 
 init() {
 	name="$(pwd)"
@@ -115,6 +121,8 @@ commit 	create a commit with done todos
 help 	print this help message
 EOF
 }
+
+#------- wire things up -------
 
 command="$1"
 
