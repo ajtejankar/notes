@@ -23,15 +23,13 @@ sanitize_commit_msg() {
 }
 
 to_win_path() {
+	# if leading slash is provided
+	# then change drive letter casing
 	if [[ "${1:0:1}" = '/' ]]; then
 		path="${1:2}"
 		drive_letter="${1:1:1}"
 		path="${drive_letter^^}:$path"
-		# if leading slash is provided
-		# then change drive letters
 	else
-		# assume that this is a relative path
-		# and henve no drive letter changing is done
 		path="$1"
 	fi
 
