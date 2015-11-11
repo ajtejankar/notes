@@ -6,6 +6,22 @@ notes_dirname=".notes"
 ((commit_notes='0'))
 # has to be regex escaped
 note_done_marker='✔'
+first_todo="tasks.todo"
+
+
+gen_patch() {
+	git diff --no-index -- "$1" "$2"
+}
+
+parse_done() {
+	echo "";
+	grep -E -h "+\s+$note_done_marker";
+}
+
+sanitize_commit_msg() {
+	sed -i -r "s:\+\s+$note_done_marker:*:g" "$1"
+	sed -i -r "s:@.*$::g" "$1"
+}
 
 init() {
 	name="$(pwd)"
@@ -18,11 +34,12 @@ init() {
 
 	if ! [[ -d "$notes_dir" ]]; then
 		mkdir "$notes_dir"
-		touch "$notes_dir/tasks.todo"
-		which subl &>/dev/null && subl "$notes_dir/tasks.todo"
+		touch "$notes_dir/$first_todo"
+		which subl &>/dev/null && subl "$notes_dir/$first_todo"
 	fi
 
 	ln -s "$notes_dir" "$notes_dirname"
+	mkdir "$notes_dirname/prev"
 
 	# we don't care if the no '.gitignore' file is present
 	# so squash the error
@@ -51,7 +68,9 @@ commit() {
 			touch "$prev_file"
 		fi
 
-		git diff "$prev_file" "$file" | grep -E -h "+\s+$note_done_marker" > commit_template
+		gen_patch "$prev_file" "$file" | parse_done > commit_template
+
+		sanitize_commit_msg commit_template
 
 		git commit -t commit_template
 
