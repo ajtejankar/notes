@@ -7,5 +7,7 @@ a dropbox folder.
 ## Installation
 
 The script is written in bash, so you'll need a terminal
-running bash. To install, clone this repo somewhere and
-the path to it in the `PATH` variable.
+running bash.
+
+To install, clone this repo somewhere and
+add its path to the `PATH` variable.
