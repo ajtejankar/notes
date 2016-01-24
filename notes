@@ -2,6 +2,7 @@
 
 ########## config ###########
 dropbox_dir=~/"Dropbox/work/notes"
+home_dir=~/notes
 notes_dirname=".notes"
 
 # switch to control whether .notes directory is committed or not
@@ -42,12 +43,16 @@ init() {
 	name="${name##*/}"
 	notes_dir="$dropbox_dir/$name"
 
+  if ! [[ -d ~/Dropbox ]]; then
+    notes_dir="$home_dir/$name"
+  fi
+
 	if ! git status &>/dev/null; then
 		git init
 	fi
 
 	if ! [[ -d "$notes_dir" ]]; then
-		mkdir "$notes_dir"
+		mkdir -p "$notes_dir"
 		mkdir "$notes_dir/prev"
 		touch "$notes_dir/$first_todo"
 		which subl &>/dev/null && subl "$notes_dir/$first_todo"
