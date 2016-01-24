@@ -1,34 +1,21 @@
 #!/usr/bin/env bash
 
-#------- config -------
-
+########## config ###########
 dropbox_dir=~/"Dropbox/work/notes"
 notes_dirname=".notes"
-# switch to commit the notes dir
+
+# switch to control whether .notes directory is committed or not
 ((commit_notes='0'))
-# has to be regex escaped
+
+# following two strings have to be regex escaped
 note_done_marker='✔'
+note_todo_marker='☐'
+
 first_todo="tasks.todo"
-
-#------- utility functions -------
-
-gen_patch() {
-	git diff --no-index -- "$1" "$2"
-}
-
-parse_done() {
-	echo "";
-	grep -E -h "+\s+$note_done_marker";
-}
-
-sanitize_commit_msg() {
-	sed -i -r "s:\+\s+$note_done_marker:*:g" "$1"
-	sed -i -r "s:@.*$::g" "$1"
-}
+#############################
 
 to_win_path() {
-	# if leading slash is provided
-	# then change drive letter casing
+	# if leading slash is provided then change drive letter casing
 	if [[ "${1:0:1}" = '/' ]]; then
 		path="${1:2}"
 		drive_letter="${1:1:1}"
@@ -37,19 +24,18 @@ to_win_path() {
 		path="$1"
 	fi
 
+	# change unix style path separators to windows style
 	path="${path//\//\\}"
 	echo "$path"
 }
 
 create_link() {
-	path="$(to_win_path $1)"
+	path="$(to_win_path "$1")"
 
 	if [[ "$OS" = *Windows* ]]; then
 		create_link.cmd "$notes_dirname" "$path"
 	fi
 }
-
-#------- commands -------
 
 init() {
 	name="$(pwd)"
@@ -62,19 +48,18 @@ init() {
 
 	if ! [[ -d "$notes_dir" ]]; then
 		mkdir "$notes_dir"
+		mkdir "$notes_dir/prev"
 		touch "$notes_dir/$first_todo"
 		which subl &>/dev/null && subl "$notes_dir/$first_todo"
 	fi
 
 	create_link "$notes_dir"
-	mkdir "$notes_dirname/prev"
 
-	# we don't care if the no '.gitignore' file is present
-	# so squash the error
+	# we don't care if the no '.gitignore' file is present so squash the error
 	if ! grep "$notes_dirname" '.gitignore' &>/dev/null && ! ((commit_notes)); then
 		echo "$notes_dirname" >> '.gitignore'
 		git add '.gitignore'
-		git commit -m "add .notes dir"
+		git commit -m "add .notes dir to .gitignore"
 		echo ""
 		echo "================================"
 		echo "To change the commit message run"
@@ -84,30 +69,54 @@ init() {
 }
 
 commit() {
+	if ! [[ -d "$notes_dirname" ]]; then
+		init
+	fi
+
 	for file in "$notes_dirname"/*; do
-		if ! [[ -f "$file" ]]; then
-			continue
+		if [[ -d "$file" ]]; then
+			continue;
 		fi
 
-		name="${file##*/}"
-		prev_file="$notes_dirname/prev/$name"
+		prev_file="$notes_dirname/prev/${file##*/}"
+		touch "$prev_file"
+		# task_section="$(basename "$file")"
+		# task_section="${task_section%\.*}"
+		# echo -e "# $task_section\n"
 
-		if ! [[ -f "$prev_file" ]]; then
-			touch "$prev_file"
-		fi
+		grep "$note_done_marker" "$file" | while read -r todo; do
+			todo="${todo% @done*}"
+			todo="$(sed -r "s/^\s*$note_done_marker\s*//" <<<"$todo")"
+			prev_todo="$(grep "$todo" "$prev_file")"
 
-		gen_patch "$prev_file" "$file" | parse_done > commit_template
+			if [[ -z "$prev_todo" ]] || grep "$note_todo_marker" <<<"$prev_todo"; then
+				echo "* $todo"
+			fi
+		done
+	done > /tmp/commit_template
 
-		sanitize_commit_msg commit_template
+	if [[ -z "$(cat /tmp/commit_template)" ]]; then
+		rm /tmp/commit_template
+		exit 1
+	fi
 
-		git commit -t commit_template
+	# add newlines so that user can add the commit message
+	sed -i '1s/^/\n\n/' /tmp/commit_template
+	git commit -t /tmp/commit_template
 
-		if [[ "$?" = "0" ]]; then
+	# if the user did enter a commit message then copy the files to prev dir
+	if [[ "$?" == "0" ]]; then
+		for file in "$notes_dirname"/*; do
+			if [[ -d "$file" ]]; then
+				continue;
+			fi
+
+			prev_file="$notes_dirname/prev/${file##*/}"
 			cp "$file" "$prev_file"
-		fi
+		done
+	fi
 
-		rm commit_template
-	done
+	rm /tmp/commit_template
 }
 
 help() {
@@ -122,12 +131,11 @@ help 	print this help message
 EOF
 }
 
-#------- wire things up -------
-
 command="$1"
 
 case "$command" in
 	"init") init ;;
 	"commit") commit ;;
+	"help") help ;;
 	"") help ;;
 esac
