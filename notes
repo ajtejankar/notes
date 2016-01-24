@@ -96,6 +96,7 @@ commit() {
 	done > /tmp/commit_template
 
 	if [[ -z "$(cat /tmp/commit_template)" ]]; then
+    echo "No completed todos to commit"
 		rm /tmp/commit_template
 		exit 1
 	fi
@@ -125,7 +126,7 @@ usage: notes <command>
 
 Following commands can be used
 
-init 	init a new note for the current project
+init 	init a new note for the current project (needs admin command prompt)
 commit 	create a commit with done todos
 help 	print this help message
 EOF
