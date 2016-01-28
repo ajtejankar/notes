@@ -51,7 +51,16 @@ init() {
 		git init
 	fi
 
-	if ! [[ -d "$notes_dir" ]]; then
+  if [[ -d "$notes_dirname" ]]; then
+    mv "$notes_dirname" "$notes_dir"
+
+    if [[ -d "$notes_dir/prev" ]]; then
+      rm -rf "$notes_dir/prev"
+    fi
+
+    mkdir "$notes_dir/prev"
+    cp "$notes_dir/"*.todo "$notes_dir/prev/"
+	elif ! [[ -d "$notes_dir" ]]; then
 		mkdir -p "$notes_dir"
 		mkdir "$notes_dir/prev"
 		touch "$notes_dir/$first_todo"
