@@ -11,7 +11,7 @@ script that automates creation of commit messages from those todos.
 ## Installation
 
 The script is written in bash, so you'll need a terminal
-running bash. To install, clone this repo somewhere and
+running bash. To install, clone this repo somewhere and add
 the path to it in the `PATH` variable.
 
 ## Usage
