@@ -13,6 +13,9 @@ note_done_marker='✔'
 note_todo_marker='☐'
 
 first_todo="tasks.todo"
+
+name="$(basename "$(pwd)")"
+notes_dir="$dropbox_dir/$name"
 #############################
 
 to_win_path() {
@@ -31,25 +34,29 @@ to_win_path() {
 }
 
 create_link() {
-	path="$(to_win_path "$1")"
+  pushd "$notes_dirname" >/dev/null
 
-	if [[ "$OS" = *Windows* ]]; then
-		create_link.cmd "$notes_dirname" "$path"
-	fi
+  for file in "$1"/*; do
+    echo "$file"
+    if ! [[ -f "$file" ]]; then
+      continue;
+    fi
+
+    if [[ "$OS" = *Windows* ]]; then
+      path="$(to_win_path "$file")"
+      create_link.cmd "$(basename "$file")" "$path"
+    elif [[ "$OS" = *Linux* ]]; then
+      ln "$file"
+    fi
+  done
+
+  popd >/dev/null
 }
 
 init() {
-	name="$(pwd)"
-	name="${name##*/}"
-	notes_dir="$dropbox_dir/$name"
-
   if ! [[ -d ~/Dropbox ]]; then
     notes_dir="$home_dir/$name"
   fi
-
-	if ! git status &>/dev/null; then
-		git init
-	fi
 
   if [[ -d "$notes_dirname" ]]; then
     mv "$notes_dirname" "$notes_dir"
@@ -64,13 +71,19 @@ init() {
 		mkdir -p "$notes_dir"
 		mkdir "$notes_dir/prev"
 		touch "$notes_dir/$first_todo"
-		which subl &>/dev/null && subl "$notes_dir/$first_todo"
 	fi
 
+  mkdir "$notes_dirname"
 	create_link "$notes_dir"
 
 	# we don't care if the no '.gitignore' file is present so squash the error
-	if ! grep "$notes_dirname" '.gitignore' &>/dev/null && ! ((commit_notes)); then
+	if [[ -d ".git" ]] && ! ((commit_notes)); then
+    touch .gitignore
+
+    if grep "$notes_dirname" '.gitignore' &>/dev/null; then
+      return 0
+    fi
+
 		echo "$notes_dirname" >> '.gitignore'
 		git add '.gitignore'
 		git commit -m "add .notes dir to .gitignore"
@@ -92,18 +105,15 @@ commit() {
 			continue;
 		fi
 
-		prev_file="$notes_dirname/prev/${file##*/}"
+		prev_file="$notes_dir/prev/${file##*/}"
 		touch "$prev_file"
-		# task_section="$(basename "$file")"
-		# task_section="${task_section%\.*}"
-		# echo -e "# $task_section\n"
 
 		grep "$note_done_marker" "$file" | while read -r todo; do
 			todo="${todo% @done*}"
 			todo="$(sed -r "s/^\s*$note_done_marker\s*//" <<<"$todo")"
 			prev_todo="$(grep "$todo" "$prev_file")"
 
-			if [[ -z "$prev_todo" ]] || grep "$note_todo_marker" <<<"$prev_todo"; then
+			if [[ -z "$prev_todo" ]] || grep "$note_todo_marker" <<<"$prev_todo" >/dev/null; then
 				echo "* $todo"
 			fi
 		done

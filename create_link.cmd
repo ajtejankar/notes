@@ -1,1 +1,1 @@
-MKLINK /D %1 %2
+MKLINK %1 %2
