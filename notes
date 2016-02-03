@@ -37,14 +37,17 @@ create_link() {
   pushd "$notes_dirname" >/dev/null
 
   for file in "$1"/*; do
-    echo "$file"
     if ! [[ -f "$file" ]]; then
       continue;
     fi
 
     if [[ "$OS" = *Windows* ]]; then
       path="$(to_win_path "$file")"
-      create_link.cmd "$(basename "$file")" "$path"
+      if ! create_link.cmd "$(basename "$file")" "$path"; then
+        popd >/dev/null
+        rm -rf "$notes_dirname"
+        return 1
+      fi
     elif [[ "$OS" = *Linux* ]]; then
       ln "$file"
     fi
