@@ -139,7 +139,7 @@ commit() {
 				continue;
 			fi
 
-			prev_file="$notes_dirname/prev/${file##*/}"
+			prev_file="$notes_dir/prev/${file##*/}"
 			cp "$file" "$prev_file"
 		done
 	fi
